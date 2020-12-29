@@ -5,4 +5,4 @@ twice, and in general, keeps track of the automated actions of the users to make
 sure the bot doesn't spam the API and behaves like a normal user. (:
 """
 
-from .database import *
+from .database import Database
