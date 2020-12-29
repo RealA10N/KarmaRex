@@ -6,3 +6,4 @@ sure the bot doesn't spam the API and behaves like a normal user. (:
 """
 
 from .database import Database
+from .user import UserDatabase
