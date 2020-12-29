@@ -117,11 +117,18 @@ class Data:
         """
 
         if self.is_folder:
+
+            logging.debug(
+                "Saving database folder - '%s'", self.folder_path)
+
             self._save_folder()
 
         else:  # If saving file
             if path is None:
                 raise TypeError("While saving a file, you must provide a path")
+
+            logging.debug(
+                "Saving database file - '%s'", path)
 
             self._save_file(path)
 
@@ -178,9 +185,6 @@ class Data:
     def _save_folder(self,):
         """ Called if the database represents a folder. Saved the data into
         the folder! """
-
-        logging.debug(
-            "Saving database folder from memory - '%s'", self.folder_path)
 
         os.makedirs(self.folder_path, exist_ok=True)
 
