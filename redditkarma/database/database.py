@@ -137,7 +137,7 @@ class Data:
     @property
     def is_folder(self,) -> bool:
         """ Returns `True` only if this Data is saved in a separate folder. """
-        return self._folder is not None
+        return self.folder_path is not None
 
     @property
     def folder_path(self,) -> typing.Optional[str]:
@@ -258,11 +258,21 @@ class Database(Data):
     sure that the data that is saved in the memory is saved in the storage.
     """
 
-    def __init__(self, data=None, path: str = None,):
-        super().__init__(data, path)
+    DATABASE_FOLDER_NAME = "db"
+
+    def __init__(self,):
+        super().__init__(path=self._generate_folder_path())
 
         # Save the database from memory when exiting the script.
         atexit.register(self.save)
+
+    def _generate_folder_path(self,) -> str:
+        """ The absolute path to the `db` folder. Overwrites the same property
+        in the `Data` class. """
+        database_module = os.path.dirname(os.path.abspath(__file__))
+        module = os.path.dirname(database_module)
+        project = os.path.dirname(module)
+        return os.path.join(project, self.DATABASE_FOLDER_NAME)
 
 
 class DatabaseError(Exception):
