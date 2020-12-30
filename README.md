@@ -1,4 +1,4 @@
-![Karma Rex Banner](/assets/karma-rex-banner.png)
+![Karma Rex Banner](/assets/karma-rex-banner-glow.png)
 
 # Karma Rex: Gain Reddit Karma. Fast.
 
