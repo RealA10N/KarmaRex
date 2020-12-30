@@ -1,86 +1,76 @@
-import os
 import praw
-from .database import Database
+from .database import UsingDatabase, Data
 
 
-class UserDatabase(Database):
-
-    """ This class is a `Data` class that contains"""
+class UserDatabase(UsingDatabase):
 
     _DEFAULT_USER_AGENT = r'https://github.com/RealA10N/reddit-karma/'
+    _NEEDED_PRAW_CREDENTIALS = ["username", "password",
+                                "client_id", "client_secret", "user_agent"]
 
-    def __init__(self,
-                 username: str,
-                 password: str = None,
-                 client_id: str = None,
-                 client_secret: str = None,
-                 ):
-        self.__username = username
+    def __get_user_credentials(self, username: str) -> Data:
+        """ Returns the `Data` instance that represents the login information of
+        the given reddit username. """
 
-        super().__init__()
+        return self._access_db("users", username, "credentials")
 
-        self.__praw = self.__generate_praw_instance(
-            username=username,
-            password=password,
-            client_id=client_id,
-            client_secret=client_secret,
-            user_agent=self._DEFAULT_USER_AGENT,
-        )
-
-    def _generate_folder_path(self):
-        """ Returns the path to the folder containing user related data for the
-        current user. """
-
-        return os.path.join(
-            super()._generate_folder_path(),  # the database folder
-            "users",
-            self.username,
-        )
-
-    def __generate_praw_instance(self, **new_credentials):
+    def generate_praw_instance(self, username: str):
         """ Loads the login credentials from the database, generates an
         `praw.Reddit` instance and returns it.
 
         Raises an error of some credentials are missing!"""
 
-        old_credentials = self.access("login").get()
-        if old_credentials is None:
-            old_credentials = dict()
-
-        new_credentials = {
-            credential: new_credentials[credential]
-            for credential in new_credentials
-            if new_credentials[credential] is not None
-        }
-
-        credentials = {
-            **old_credentials,
-            **new_credentials,
-        }
-
-        self.access("login").set(credentials)
-
-        needed_credentials = ["username", "password",
-                              "client_id", "client_secret", "user_agent"]
-
-        if not all(credential in credentials for credential in needed_credentials):
+        credentials = self.__get_user_credentials(username).get()
+        if not all(credential in credentials for credential in self._NEEDED_PRAW_CREDENTIALS):
             # If not all credentials are provided
             raise MissingCredentialsError(
                 "One or more of the needed credentials for a request to reddit are not provided.")
 
         return praw.Reddit(**credentials)
 
-    # - - P R O P E R T I E S - - #
+    def update_user_credentials(self,
+                                username: str,
+                                password: str = None,
+                                client_id: str = None,
+                                client_secret: str = None,
+                                ):
+        """ Recives a Reddit username and additional login credentials, and
+        saved the additional data in the user database. """
 
-    @property
-    def username(self,) -> str:
-        """ The reddit username to which the data belongs. """
-        return self.__username
+        login_db = self.__get_user_credentials(username)
 
-    @property
-    def reddit_api(self,):
-        """ An `praw.Reddit` instance that matches the user credentials. """
-        return self.__praw
+        # Save the data given as arguments
+        new_credentials = {
+            "username": username,
+            "password": password,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "user_agent": self._DEFAULT_USER_AGENT
+        }
+
+        # Clear `None` values from the new data
+        new_credentials = {
+            key: new_credentials[key]
+            for key in new_credentials
+            if new_credentials[key] is not None
+        }
+
+        # Load the data that is not `None` from the database
+        old_credentials = login_db.get()
+
+        # Merge the new data with the old data
+        credentials = dict()
+        for key in self._NEEDED_PRAW_CREDENTIALS:
+            if key in new_credentials:
+                # If provided in the new data, save it.
+                credentials[key] = new_credentials[key]
+
+            elif key in old_credentials:
+                # If already saved in the database, but not overwritted by new data
+                credentials[key] = old_credentials[key]
+
+        # Save the new generated credentials back to the database
+        login_db.set(credentials)
 
 
 class MissingCredentialsError(Exception):

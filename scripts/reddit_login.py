@@ -4,7 +4,7 @@ so you don't have to type it everytime you want to run the bot! """
 # pylint: disable=invalid-name,unused-import
 
 import __init__  # to properly import the actual `redditkarma` module
-from redditkarma.database import UserDatabase
+from redditkarma.database import Database, UserDatabase
 
 REQUIRED = [
     'username',
@@ -17,6 +17,7 @@ credentials = dict()
 for cur in REQUIRED:
     credentials[cur] = input(f"Please enter your reddit {cur}: ")
 
-# Automatically saves the data when script ends
-db = UserDatabase(**credentials)
-print(f"Saved data for '{credentials['username']}'.")
+user_db = UserDatabase(Database())
+user_db.update_user_credentials(**credentials)
+
+print(f"Saved credentials for '{credentials['username']}'.")

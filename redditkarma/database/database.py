@@ -275,6 +275,21 @@ class Database(Data):
         return os.path.join(project, self.DATABASE_FOLDER_NAME)
 
 
+class UsingDatabase:
+
+    def __init__(self, database: Database):
+        self.__database = database
+
+    def _access_db(self, *args: str) -> Data:
+        """ Returns a `Data` object, that is represented by the given path
+        in the database. """
+        return self.__database.access(*args)
+
+    def _save_db(self,) -> None:
+        """ Saves the data in the database locally. """
+        self.__database.save()
+
+
 class DatabaseError(Exception):
     """ Raised when there is an error related to the database. """
 
