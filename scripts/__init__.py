@@ -21,17 +21,21 @@ class AsciiKarmaRexBanner:
     VERTICAL_SPACING_TEXT_ART = 0
     MIN_SCREEN_SIZE_TO_ART = 45
 
-    KARMA_ART = r""" _  __
-| |/ /  __ _  _ __  _ __ ___    __ _
-| ' /  / _` || '__|| '_ ` _ \  / _` |
-| . \ | (_| || |   | | | | | || (_| |
-|_|\_\ \__,_||_|   |_| |_| |_| \__,_|""".splitlines()  # art.tprint("Karma", "big")
+    KARMA_ART = [  # art.tprint("Karma", "big")
+        r" _  __",
+        r"| |/ /  __ _  _ __  _ __ ___    __ _",
+        r"| ' /  / _` || '__|| '_ ` _ \  / _` |",
+        r"| . \ | (_| || |   | | | | | || (_| |",
+        r"|_|\_\ \__,_||_|   |_| |_| |_| \__,_|",
+    ]
 
-    REX_ART = r""" ____
-|  _ \   ___ __  __
-| |_) | / _ \\ \/ /
-|  _ < |  __/ >  <
-|_| \_\ \___|/_/\_\ """.splitlines()  # art.tprint("Rex", "big")
+    REX_ART = [  # art.tprint("Rex", "big")
+        r" ____",
+        r"|  _ \   ___ __  __",
+        r"| |_) | / _ \\ \/ /",
+        r"|  _ < |  __/ >  <",
+        r"|_| \_\ \___|/_/\_\ ",
+    ]
 
     TITLE_TEXT = "GAIN REDDIT KARMA. FAST."
 
