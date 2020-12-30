@@ -5,7 +5,8 @@ from .database import Database
 
 class UserDatabase(Database):
 
-    _DB_FOLDER = "db"
+    """ This class is a `Data` class that contains"""
+
     _DEFAULT_USER_AGENT = r'https://github.com/RealA10N/reddit-karma/'
 
     def __init__(self,
@@ -16,9 +17,7 @@ class UserDatabase(Database):
                  ):
         self.__username = username
 
-        super().__init__(
-            path=os.path.join(self._DB_FOLDER, self.username)
-        )
+        super().__init__()
 
         self.__praw = self.__generate_praw_instance(
             username=username,
@@ -26,6 +25,16 @@ class UserDatabase(Database):
             client_id=client_id,
             client_secret=client_secret,
             user_agent=self._DEFAULT_USER_AGENT,
+        )
+
+    def _generate_folder_path(self):
+        """ Returns the path to the folder containing user related data for the
+        current user. """
+
+        return os.path.join(
+            super()._generate_folder_path(),  # the database folder
+            "users",
+            self.username,
         )
 
     def __generate_praw_instance(self, **new_credentials):
@@ -67,11 +76,6 @@ class UserDatabase(Database):
     def username(self,) -> str:
         """ The reddit username to which the data belongs. """
         return self.__username
-
-    @property
-    def _database_path(self,) -> str:
-        """ The path to the folder in which the database files are saved. """
-        return os.path.join(self._DB_FOLDER, self.username)
 
     @property
     def reddit_api(self,):
