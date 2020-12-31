@@ -55,32 +55,45 @@ class SubredditGroupDatabase(UsingDatabase):
 
         db.set(db_data)
 
+    def __normalize_str_args(self,
+                             item: typing.Union[
+                                 typing.List[str],
+                                 typing.Set[str],
+                                 str
+                             ]) -> typing.Set[str]:
+        """ Recives a list of arguments, where some are strings, some are lists
+        of strings, and some are sets of strings. Combines all of the strings
+        into a one set of strings, are returns it. """
+
+        if isinstance(item, str):
+            return {item}
+
+        if isinstance(item, (list, set, tuple)):
+
+            final_set = set()
+            for list_item in item:
+                # Union the final set with the new data (append new data
+                # to final set)
+                final_set |= self.__normalize_str_args(list_item)
+
+            return final_set
+
+        return set()
+
     def add_subreddits(self, *args: typing.Union[typing.List[str], str]) -> None:
         """ Adds the given subreddits to the current subreddit group. If a non
         string is given (or a list of non string), it will be ignored and will
         not raise an error. """
 
         # Generate the final list of subreddits to add from the arguments
-        # if lists of subreddits are given, convert them to strings.
-        to_add = list()
-        for arg in args:
-            if isinstance(arg, str):
-                to_add.append(arg)
-            elif isinstance(arg, list):
-                for item in arg:
-                    if isinstance(item, str):
-                        to_add.append(item)
+        # if lists of subreddits are given, convert them to only list of strings.
+        to_add = self.__normalize_str_args(args)
 
         # Get saved subreddit list
         data = self.subreddits_in_group  # Python 'Set' instance
 
-        # Add the given subreddit to the list
-        for subreddit in to_add:
-            if subreddit not in data:
-                data.add(subreddit)
-
         # Update the database with the new data
-        self.set_subreddits(data)
+        self.set_subreddits(data | to_add)
 
     def add_subreddit(self, subreddit_name: str) -> None:
         """ Adds the given subreddit to the current subreddit group. """
@@ -90,16 +103,19 @@ class SubredditGroupDatabase(UsingDatabase):
 
         self.add_subreddits(subreddit_name)
 
-    def set_subreddits(self, subreddits: typing.Union[typing.List[str], typing.Set[str]]) -> None:
+    def set_subreddits(self,
+                       *subreddits: typing.Union[
+                           typing.List[str],
+                           typing.Set[str],
+                           str,
+                       ]) -> None:
         """ Recives a list (or a set) of subreddits and sets it as the subreddits
         in the subreddit group. The subreddits must be represented as a string,
         without the 'r/' part (only the actual name). """
 
-        # Convert to set (Remove duplicates)
-        subreddits = list(set(subreddits))
-
-        # Save to the database
-        self._access_db(self._SUBREDDITS_LIST_KEY).set(subreddits)
+        self._access_db(self._SUBREDDITS_LIST_KEY).set(
+            list(self.__normalize_str_args(subreddits))
+        )
 
     @property
     def name(self,):
