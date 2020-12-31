@@ -178,7 +178,13 @@ class Data:
             if name is not None:
                 filepath = os.path.join(self.folder_path, filename)
                 with open(filepath, 'r', encoding='utf8') as open_file:
-                    data[name] = json.load(open_file)
+
+                    try:
+                        data[name] = json.load(open_file)
+
+                    except ValueError:
+                        # if failed to load due to invalid json syntax
+                        data[name] = None
 
         return data
 
