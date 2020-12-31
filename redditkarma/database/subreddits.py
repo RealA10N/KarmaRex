@@ -14,10 +14,18 @@ from .database import Database, UsingDatabase
 class SubredditGroupDatabase(UsingDatabase):
 
     _SUBREDDITS_LIST_KEY = "subreddits"
+    _COMMENTS_LIST_KEY = "comments"
     _DEFAULT_SUBREDDIT_GROUP_DB_STRUCTURE = {
 
-        # list of subreddit names, without the 'r/' part (only actual name)
+        # List of subreddit names, without the 'r/' part (only actual name)
+        # Actually a set, but saved in the json format as a list.
         _SUBREDDITS_LIST_KEY: list(),
+
+        # A list of comment general comments, related to the subreddit group
+        # general common theme. Comments from this list will randomally be posted
+        # by the bot on random posts from the subreddits in the group.
+        # Actually a set, but saved in the json format as a list.
+        _COMMENTS_LIST_KEY: list(),
 
     }
 
@@ -80,26 +88,27 @@ class SubredditGroupDatabase(UsingDatabase):
 
         return set()
 
-    def add_subreddits(self, *args: typing.Union[typing.List[str], str]) -> None:
+    # - - S U B R E D D I T S - - #
+
+    def add_subreddits(self,
+                       *subreddits: typing.Union[
+                           typing.List[str],
+                           typing.Set[str],
+                           str,
+                       ]) -> None:
         """ Adds the given subreddits to the current subreddit group. If a non
         string is given (or a list of non string), it will be ignored and will
         not raise an error. """
 
-        # Generate the final list of subreddits to add from the arguments
-        # if lists of subreddits are given, convert them to only list of strings.
-        to_add = self.__normalize_str_args(args)
-
-        # Get saved subreddit list
-        data = self.subreddits_in_group  # Python 'Set' instance
-
-        # Update the database with the new data
-        self.set_subreddits(data | to_add)
+        self.set_subreddits(
+            self.subreddits | self.__normalize_str_args(subreddits)
+        )
 
     def add_subreddit(self, subreddit_name: str) -> None:
         """ Adds the given subreddit to the current subreddit group. """
 
         if not isinstance(subreddit_name, str):
-            raise TypeError("Subreddit name must be a string.")
+            raise TypeError("Subreddit name must be a string")
 
         self.add_subreddits(subreddit_name)
 
@@ -118,14 +127,60 @@ class SubredditGroupDatabase(UsingDatabase):
         )
 
     @property
+    def subreddits(self,) -> typing.Set[str]:
+        """ A set of the subreddits that are in the current subreddit
+        group. """
+        return set(self._access_db(self._SUBREDDITS_LIST_KEY).get())
+
+    # - - C O M M E N T S - - #
+
+    def add_comments(self,
+                     *comments: typing.Union[
+                         typing.List[str],
+                         typing.Set[str],
+                         str,
+                     ]) -> None:
+        """ Adds the given comments to the current subreddit group. If a non string
+        is given, it will be ignored and will not raise an error. """
+
+        self.set_comments(
+            self.comments | self.__normalize_str_args(comments)
+        )
+
+    def add_comment(self, comment: str) -> None:
+        """ Adds the given comment (string) to the set of comments of the current
+        subreddit group. If a non string is given, a `TypeError` will be raised. """
+
+        if not isinstance(comment, str):
+            raise TypeError("Comment must be a string")
+
+        self.add_comments(comment)
+
+    def set_comments(self,
+                     *comments: typing.Union[
+                         typing.List[str],
+                         typing.Set[str],
+                         str,
+                     ]) -> None:
+        """ Overwrites the set of comments for the current subreddit group with
+        the given set of strings. """
+
+        self._access_db(self._COMMENTS_LIST_KEY).set(
+            list(self.__normalize_str_args(comments))
+        )
+
+    @property
+    def comments(self,) -> typing.Set[str]:
+        """ A set of the comments that can be commented on submissions from the
+        current subreddit group. """
+
+        return set(self._access_db(self._COMMENTS_LIST_KEY).get())
+
+    # - - G E N E R A L - P R O P E R T I E S - - #
+
+    @property
     def name(self,):
         """ The name of the subreddits group - usually something general that
         is common between the subreddits. For example: "art", "tech", "news",
         etc. """
         return self.__name
-
-    @property
-    def subreddits_in_group(self,) -> typing.Set[str]:
-        """ Returns a list of the subreddits that are in the current subreddit
-        group. """
-        return set(self._access_db(self._SUBREDDITS_LIST_KEY).get())
