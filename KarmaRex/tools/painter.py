@@ -1,39 +1,29 @@
+"""  The `painter` is a collection of object that print information to the console.
+It can print simple text, forms, or even complex art and images. """
+
 import typing
 import os
 from abc import ABC, abstractmethod
 
 
-def decorate_methods(decorator):
-    """ Decorate all methods in the class with the given decorator.
-    This is a class decorator! """
-    def decorate(cls):
-        for attr in cls.__dict__:
-            if callable(getattr(cls, attr)):
-                setattr(cls, attr, decorator(getattr(cls, attr)))
-        return cls
-    return decorate
-
-
-@decorate_methods(property)
-@decorate_methods(abstractmethod)
-class DrawingBox(ABC):
+class DrawingBox:  # pylint: disable=too-few-public-methods
     """ Abstract class. This group of classes represent different 'border' / 'box'
     ASCII designs. """
 
-    # pylint: disable=missing-docstring, multiple-statements, invalid-name, no-self-use
+    # By deafult - 'invisible' border
 
-    def TOP_LEFT(self): return
-    def TOP_RIGHT(self): return
-    def BOTTOM_LEFT(self): return
-    def BOTTOM_RIGHT(self): return
-    def HORIZONTAL(self): return
-    def VERTICAL(self): return
+    TOP_LEFT = ' '
+    TOP_RIGHT = ' '
+    BOTTOM_LEFT = ' '
+    BOTTOM_RIGHT = ' '
+    HORIZONTAL = ' '
+    VERTICAL = ' '
 
-    def CROSS(self): return
-    def JUNCTION_BOTTOM(self): return
-    def JUNCTION_TOP(self): return
-    def JUNCTION_LEFT(self): return
-    def JUNCTION_RIGHT(self): return
+    CROSS = ' '
+    JUNCTION_BOTTOM = ' '
+    JUNCTION_TOP = ' '
+    JUNCTION_LEFT = ' '
+    JUNCTION_RIGHT = ' '
 
 
 class HeavyDrawingBox(DrawingBox):
@@ -112,6 +102,21 @@ class Draw(ABC):
         overflow in a single line. """
         return text <= self.width
 
+    @staticmethod
+    def calc_width(text: typing.List[str]) -> int:
+        """ Returns the width of the given text. Text should be a list of
+        strings. """
+        return max(len(line) for line in text)
+
+    def empty_line(self, length: int = None):
+        """ Returns an empty line, of the given length. If length is not given,
+        returns an empty line with the length of the terminal. """
+
+        if length is None:
+            length = self.width
+
+        return ' ' * length
+
     # - - P R O P E R T I E S - - #
 
     @property
@@ -135,10 +140,19 @@ class DirectionalDraw(Draw, ABC):  # pylint: disable=abstract-method
     `Draw` object to the right, left, or the center. """
 
     _POSSIBLE_ALIGNMENTS = {'r', 'l', 'c'}
+    _DEFAULT_ALIGNMENT = 'l'
 
-    def __init__(self, box: DrawingBox = None):
+    def __init__(self,
+                 box: DrawingBox = None,
+                 align: str = None,
+                 ):
         super().__init__(box)
-        self.__align = 'l'  # align to left by default
+
+        if align is None:
+            align = self._DEFAULT_ALIGNMENT
+
+        self.__align = None
+        self.set_align(align)
 
     def set_align(self, direction: str):
         """ Sets the direction in which the text will be aligned.
@@ -158,6 +172,56 @@ class DirectionalDraw(Draw, ABC):  # pylint: disable=abstract-method
 
         # Save the alignment
         self.__align = direction
+
+    def to_length(self,
+                  text: str,
+                  to_len: int,
+                  align: bool = True,
+                  ) -> str:
+        """ Recives a string (`text`) and a desired length. Adds padding
+        or cuts the text to match the length of the text to the desired
+        length, and returns the new string.
+        If `align` is `False`, aligns to left by default. Otherwise, uses
+        the determinded alignment saved in the `align` property. """
+
+        if align:
+            align = self.align
+        else:
+            align = None
+
+        if len(text) < to_len:
+            # If shorter then needed -> adds padding
+
+            padding_amount = to_len - len(text)
+
+            if align == 'c':
+                # Align to center
+                # Adds half of the padding before the text,
+                # and half of the padding after the text.
+
+                amount_before = int(padding_amount / 2)
+                amount_after = amount_before + (padding_amount % 2)
+
+                padding_before = ' ' * amount_before
+                padding_after = ' ' * amount_after
+
+                text = f"{padding_before}{text}{padding_after}"
+
+            elif align == 'r':
+                # Align to right
+                # Adds the padding before the text
+                text = (' ' * padding_amount) + text
+
+            else:
+                # align to left - default
+                # Adds the padding after the text
+                text += ' ' * padding_amount
+
+        elif len(text) > to_len:
+            # If text is longer then needed -> cuts the end
+            text = text[:to_len]
+
+        return text
 
     @property
     def align(self,) -> str:
@@ -280,39 +344,9 @@ class TextSection(DirectionalDraw):
         """ Recives the text, and formats it to match the format and the
         terminal size (adds ASCII borders and padding if needed). """
 
-        # Calculates the additional needed padding to fill the whole
-        # characters in the terminal line.
-        text_width = len(self.__generate_text(text))
-        padding_amount = max([
-            self.width - text_width,
-            0,
-        ])
-
-        # Adds the padding (3 different options)
-
-        if self.align == 'c':
-            # Align to center
-            # Adds half of the padding before the text,
-            # and half of the padding after the text.
-
-            amount_before = int(padding_amount / 2)
-            amount_after = amount_before + (padding_amount % 2)
-
-            padding_before = ' ' * amount_before
-            padding_after = ' ' * amount_after
-
-            text = f"{padding_before}{text}{padding_after}"
-
-        elif self.align == 'r':
-            # Align to right
-            # Adds the padding before the text
-            text = (' ' * padding_amount) + text
-
-        else:
-            # align to left - default
-            # Adds the padding after the text
-            text += ' ' * padding_amount
-
+        format_length = len(self.__generate_text(''))
+        desired_length = self.width - format_length
+        text = self.to_length(text, desired_length)
         return self.__generate_text(text)
 
     def __generate_text(self, text: str,):
@@ -455,3 +489,151 @@ class TextBox(DirectionalDraw):
         """ Returns a list of `TextSection` instances that are contained
         by the current box instance. """
         return self.__sections
+
+
+class KarmaRexBanner(DirectionalDraw):
+    """
+    This object has one main method 'to_screen', that generates and prints
+    the `Karma Rex` banner art into the screen.
+    It will be printed in every script that imports this one.
+
+    The are is generated using the `art` module by sepandhaghighi.
+    Check it out! --> https://github.com/sepandhaghighi/art (:
+    """
+
+    HORIZONTAL_SPACING_TEXT_ART = 3
+    VERTICAL_SPACING_TEXT_ART = 0
+    _DEFAULT_ALIGNMENT = 'c'  # align to center
+
+    KARMA_ART = [  # art.tprint("Karma", "big")
+        r" _  __",
+        r"| |/ /  __ _  _ __  _ __ ___    __ _",
+        r"| ' /  / _` || '__|| '_ ` _ \  / _` |",
+        r"| . \ | (_| || |   | | | | | || (_| |",
+        r"|_|\_\ \__,_||_|   |_| |_| |_| \__,_|",
+    ]
+
+    REX_ART = [  # art.tprint("Rex", "big")
+        r" ____",
+        r"|  _ \   ___ __  __",
+        r"| |_) | / _ \\ \/ /",
+        r"|  _ < |  __/ >  <",
+        r"|_| \_\ \___|/_/\_\ ",
+    ]
+
+    TITLE_TEXT = "GAIN REDDIT KARMA. FAST."
+
+    SUBTITLE_TEXT = "ᴬ ᵗᵒᵒˡ ᶜʳᵉᵃᵗᵉᵈ ᵇʸ ᴿᵉᵃˡᴬ¹⁰ᴺ"
+    # art.tprint("A tool created by RealA10N", "fancytext69")
+
+    def generate(self,) -> typing.List[str]:
+        """ Generates the logo text, and returns it as a list of strings. """
+
+        return [
+            self.empty_line(),
+            *self._paste_art(
+                self.generate_art([
+                    self.KARMA_ART,
+                    self.REX_ART,
+                ])
+            ),
+            self.empty_line(),
+            self._paste_line(self.TITLE_TEXT),
+            self._paste_line(self.SUBTITLE_TEXT),
+            self.empty_line(),
+        ]
+
+    def generate_art(self,
+                     artlist: typing.List[typing.List[str]],
+                     ) -> typing.List[str]:
+        """ Returns a list of strings that combins the given arts into a single
+        art. """
+
+        combined_width = sum(self.calc_width(art) for art in artlist)
+        combined_width += self.HORIZONTAL_SPACING_TEXT_ART
+
+        if combined_width <= self.width:
+            # If fits in one line
+            return self.horizontal_art_merge(artlist)
+
+        else:
+            return self.vertical_art_merge(artlist)
+
+    def horizontal_art_merge(self, artlist: typing.List[typing.List[str]]):
+        """ Recives a list of arts (art = list of strings) and returns
+        and returns a single art which represents the arts, combined
+        horizontal. """
+
+        # Add whitespaces to the art, if needed
+
+        lines = max(len(art) for art in artlist)
+        for art_i, art in enumerate(artlist):
+            art_len = self.calc_width(art)
+
+            for line_i in range(lines):
+
+                if line_i > len(art):
+                    # If index out of range, create a new empty line
+                    # and add it to the current art.
+                    artlist[art_i].append(self.empty_line(art_len))
+
+                else:
+                    artlist[art_i][line_i] = self.to_length(
+                        artlist[art_i][line_i], art_len, align=False)
+
+        # Combine arts to a single art
+
+        final = list()
+        spacing = self.HORIZONTAL_SPACING_TEXT_ART * ' '
+        for line_i in range(lines):
+
+            line_from_arts = list()
+            for art in artlist:
+                line_from_arts.append(art[line_i])
+
+            final.append(spacing.join(line_from_arts))
+
+        return final
+
+    def vertical_art_merge(self, artlist: typing.List[typing.List[str]]):
+        """ Recives a list of arts (art = list of strings) and returns
+        and returns a single art which represents the arts, combined
+        vertically. """
+
+        width = max(self.calc_width(art) for art in artlist)
+
+        final = list()
+        for art_i, art in enumerate(artlist):
+
+            if art_i:
+                # If not the first iteration
+                # Add vertical padding
+                final += [self.empty_line(width)] * \
+                    self.VERTICAL_SPACING_TEXT_ART
+
+            for line in art:
+                art_width = self.calc_width(art)
+                line = self.to_length(line, art_width, align=False)
+                final.append(self._paste_line(line))
+
+        return final
+
+    def _paste_line(self, text: str) -> str:
+        """ Aligns the text to the terminal width, and adds padding if
+        needed. Returns the new generated string. """
+        return self.to_length(text, self.width)
+
+    def _paste_art(self,
+                   art: typing.List[str],
+                   ) -> typing.List[str]:
+        """ Aligns the art to the terminal width, and adds padding if
+        needed. Returns the new generated art as a list of strings. """
+
+        return [
+            self._paste_line(line)
+            for line in art
+        ]
+
+
+# Shows the `KarmaRex` banner each time a script loads the painter
+KarmaRexBanner().show()

@@ -1,10 +1,12 @@
 """ This script lets you save the data related to the reddit API locally,
 so you don't have to type it everytime you want to run the bot! """
 
-# pylint: disable=invalid-name,unused-import
+# pylint: disable=unused-import, invalid-name
 
-import __init__  # to properly import the actual `redditkarma` module
-from redditkarma.database import Database, UserDatabase
+import __init__  # to properly import the actual `KarmaRex` module
+from KarmaRex.database import Database, UserDatabase
+from KarmaRex.tools import DrawingBox
+
 
 REQUIRED = [
     'username',
