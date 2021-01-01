@@ -79,28 +79,7 @@ class Draw(ABC):
             box = LightDrawingBox
         self.__box = box
 
-    @property
-    def width(self,) -> int:
-        """ The current width of the terminal window. Returned as an integer
-        that represents the number of characters that the window can fit in
-        a single line. """
-        return os.get_terminal_size()[0]
-
-    @property
-    def box(self,) -> DrawingBox:
-        """ An object that inherits 'DrawingBox' and has the same properties.
-        Will be used as a template while printing things to the screen! """
-        return self.__box
-
-    def set_box(self, box: DrawingBox) -> None:
-        """ Sets the drawing box of the current instance. This will be used
-        as a template while printing things to the screen! """
-        self.__box = box
-
-    def check_fits(self, text: str):
-        """ Returns `True` only if the given text will fit in the screen and won't
-        overflow in a single line. """
-        return text <= self.width
+    # - - G E N E R A L - M E T H O D S - - #
 
     @abstractmethod
     def generate(self,) -> typing.Union[typing.List[str], str]:
@@ -120,6 +99,33 @@ class Draw(ABC):
             text = '\n'.join(text)
 
         print(text)
+
+    # - - A D D I T I O N A L - M E T H O D S - - #
+
+    def set_box(self, box: DrawingBox) -> None:
+        """ Sets the drawing box of the current instance. This will be used
+        as a template while printing things to the screen! """
+        self.__box = box
+
+    def check_fits(self, text: str):
+        """ Returns `True` only if the given text will fit in the screen and won't
+        overflow in a single line. """
+        return text <= self.width
+
+    # - - P R O P E R T I E S - - #
+
+    @property
+    def width(self,) -> int:
+        """ The current width of the terminal window. Returned as an integer
+        that represents the number of characters that the window can fit in
+        a single line. """
+        return os.get_terminal_size()[0]
+
+    @property
+    def box(self,) -> DrawingBox:
+        """ An object that inherits 'DrawingBox' and has the same properties.
+        Will be used as a template while printing things to the screen! """
+        return self.__box
 
 
 class DirectionalDraw(Draw, ABC):  # pylint: disable=abstract-method
@@ -172,6 +178,8 @@ class TextSection(DirectionalDraw):
         self.__sentences = list()  # empty
         self.set_text(text)
 
+    # - - T E X T - M E T H O D S - - #
+
     def set_text(self, text: typing.Union[str, typing.List[str]]) -> None:
         """ Recives sentences, and saves them as the text to the current section.
         If the text is given as a string, it will be split into sentenced between
@@ -193,6 +201,19 @@ class TextSection(DirectionalDraw):
         sentences = self.sentences
         sentences.append(text)
         self.set_text(sentences)
+
+    # - - G E N E R A T I N G - M E T H O D S - - #
+
+    def generate(self,):
+        """ Generates and returns a list of strings that if printed to the
+        terminal, represent the text section. """
+
+        lines = list()
+        for sentence in self.sentences:
+            for line in self._cut_to_lines(sentence.split()):
+                lines.append(self._generate_line(line))
+
+        return lines
 
     def _cut_to_lines(self,
                       text_words: typing.List[str],
@@ -255,11 +276,6 @@ class TextSection(DirectionalDraw):
         removed_words.insert(0, removed)
         return self._cut_to_lines(text_words, removed_words)
 
-    def __generate_text(self, text: str,):
-        """ Recives the text, and formats it (without padding) """
-        border = self.box.VERTICAL
-        return f"{border} {text} {border}"
-
     def _generate_line(self, text: str) -> str:
         """ Recives the text, and formats it to match the format and the
         terminal size (adds ASCII borders and padding if needed). """
@@ -299,16 +315,12 @@ class TextSection(DirectionalDraw):
 
         return self.__generate_text(text)
 
-    def generate(self,):
-        """ Generates and returns a list of strings that if printed to the
-        terminal, represent the text section. """
+    def __generate_text(self, text: str,):
+        """ Recives the text, and formats it (without padding) """
+        border = self.box.VERTICAL
+        return f"{border} {text} {border}"
 
-        lines = list()
-        for sentence in self.sentences:
-            for line in self._cut_to_lines(sentence.split()):
-                lines.append(self._generate_line(line))
-
-        return lines
+    # - - P R O P E R T I E S - - #
 
     @property
     def text(self,) -> str:
@@ -340,6 +352,8 @@ class TextBox(DirectionalDraw):
         self.__sections = list()  # empty by default
         self.set_sections(sections)
 
+    # - - S E C T I O N - M E T H O D S - - #
+
     def set_sections(self, sections: typing.List[TextSection]) -> None:
         """ Recives a list on `TextSection` instances, and saves them while
         overwriting the old saved sections. """
@@ -364,6 +378,8 @@ class TextBox(DirectionalDraw):
         sections = self.sections
         sections.append(section)
         self.set_sections(sections)
+
+    # - - G E N E R A T I N G - M E T H O D S - - #
 
     def generate(self,) -> typing.List[str]:
         """ Generates a list of strings that represent the text box,
@@ -419,6 +435,8 @@ class TextBox(DirectionalDraw):
             right=self.box.BOTTOM_RIGHT,
             line=self.box.HORIZONTAL,
         )
+
+    # - - A D D I T I O N A L - - #
 
     def set_align(self, direction: str) -> None:
         """ Updates the alignment of the sections currently in the box.
