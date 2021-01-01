@@ -14,19 +14,53 @@ class UserDatabase(UsingDatabase):
 
         return self._access_db("users", username, "credentials")
 
-    def generate_praw_instance(self, username: str):
+    def generate_praw_instance(self,
+                               username: str,
+                               validate: bool = True,
+                               ):
         """ Loads the login credentials from the database, generates an
         `praw.Reddit` instance and returns it.
 
         Raises an error of some credentials are missing!"""
 
         credentials = self.__get_user_credentials(username).get()
-        if not all(credential in credentials for credential in self._NEEDED_PRAW_CREDENTIALS):
-            # If not all credentials are provided
+        if (not isinstance(credentials, dict)) or (
+            not all(
+                credential in credentials
+                for credential in self._NEEDED_PRAW_CREDENTIALS
+            )
+        ):
+                # If not all credentials are provided
             raise MissingCredentialsError(
-                "One or more of the needed credentials for a request to reddit are not provided.")
+                "One or more of the needed credentials for a request to reddit are not provided")
 
-        return praw.Reddit(**credentials)
+        # Create the praw instance
+        reddit = praw.Reddit(**credentials)
+
+        if validate and not self.check_valid_praw_instance(reddit):
+            raise InvalidCredentialsError(
+                f"Invalid credentials for Reddit username '{username}'")
+
+        return reddit
+
+    @staticmethod
+    def check_valid_praw_instance(api: praw.Reddit):
+        """ Sends a "dummy" request to the Reddit with the given `praw.Reddit`
+        instance. If something is wrong, or the credentails are invalid, will
+        return `False`. If everyting gone to plan, returns `True`. """
+
+        try:
+            # Requests information about the logged in user.
+            # This forces the api to use the credentials - and validate them!
+            api.user.me()
+
+        except Exception:  # pylint: disable=broad-except
+            # If something goes wrong, an exception will be raised.
+            # This means the function should return `False`
+            return False
+
+        else:
+            return True
 
     def update_user_credentials(self,
                                 username: str,
@@ -73,7 +107,17 @@ class UserDatabase(UsingDatabase):
         login_db.set(credentials)
 
 
-class MissingCredentialsError(Exception):
+class CredentialsError(Exception):
+    """ Raised when trying to log in to a Reddit account, but something is
+    wrong with the login credentials. """
+
+
+class MissingCredentialsError(CredentialsError):
     """ Raised when trying to generate a request to the Reddit API,
     but not all of the needed credentials are provided (username, password,
     client_id, client_secret). """
+
+
+class InvalidCredentialsError(CredentialsError):
+    """ Raised when typing to log in to a Reddit account, but recives
+    an error, which means some credentials are not correct. """
