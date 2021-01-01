@@ -4,14 +4,16 @@ example. """
 
 from .painter import (
 
-    # Drawing elements
     KarmaRexBanner,
-    TextBox,
-    TextSection,
 
     # Drawing boxes
     DrawingBox,
     HeavyDrawingBox,
     LightDrawingBox,
 
+)
+
+from .reddit_painter import (
+    PaintSubreddit,
+    PaintComment,
 )
