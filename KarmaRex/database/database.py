@@ -43,6 +43,7 @@ class Data:
     2.  Data.set(data)      Sets the data of the current instance.
     3.  Data.access(*args)  Lets you "travel" between the data instances.
     4.  Data.save()         Saves the data in the memory into the local storage.
+    Hi
     """
 
     _FILES_EXTENSION = '.json'
