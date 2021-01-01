@@ -83,6 +83,7 @@ class Data:
         Each argument represents a `Data` instance! for example, calling this
         method with the arguments[`'settings'`, `'background-color'`] will return
         a `Data` instance that is located inside the `settings` Data instance.
+        Hi
         """
 
         if not args:
@@ -156,7 +157,7 @@ class Data:
         in which the keys are strings, and the values are other `Data` instances.
 
         This property simply returns `True` if the current instance is `instant`,
-        and `False` if the current instance is `non-instant`. """
+        and `False` if the current instance is `non-instant`. Hi"""
 
         return self._instant
 
@@ -213,7 +214,7 @@ class Data:
 
         Returns a tuple that contains two elements:
         1.  The generated dictionary (or instant value)
-        2.  A boolean -> `True` if instant value, otherwise `False`
+        2.  A boolean -> `True` if instant value, otherwise `False` Hi
         """
 
         if not isinstance(raw_data, dict):
