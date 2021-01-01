@@ -4,6 +4,7 @@ It can print simple text, forms, or even complex art and images. """
 import typing
 import os
 from abc import ABC, abstractmethod
+from bidi.algorithm import get_display
 
 
 class DrawingBox:  # pylint: disable=too-few-public-methods
@@ -88,7 +89,7 @@ class Draw(ABC):
             # If a list of strings, combine to one string
             text = '\n'.join(text)
 
-        print(text)
+        print(get_display(text))
 
     # - - A D D I T I O N A L - M E T H O D S - - #
 
@@ -382,9 +383,9 @@ class TextBox(DirectionalDraw):
                  sections: typing.Union[TextSection, typing.List[TextSection]] = '',
                  box: DrawingBox = None,
                  ):
-        super().__init__(box)
         self.__sections = list()  # empty by default
         self.set_sections(sections)
+        super().__init__(box)
 
     # - - S E C T I O N - M E T H O D S - - #
 
