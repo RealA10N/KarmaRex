@@ -1,5 +1,5 @@
-"""  The `painter` is a collection of object that print information to the console.
-It can print simple text, forms, or even complex art and images. """
+""" A collection of basic & general printing object.
+Those are used by more complex printing objects in the printer. """
 
 import typing
 import os

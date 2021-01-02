@@ -8,10 +8,10 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 
 from praw.models import Subreddit, Comment
-from .painter import TextBox, TextSection, DirectionalDraw
+from .general import TextBox, TextSection, DirectionalDraw
 
 
-class PaintReddit(DirectionalDraw, ABC):
+class PrintReddit(DirectionalDraw, ABC):
     """ An abstract class. Objects that inherent from this object are used to
     represent different reddit object to the terminal (printing informtation
     about subreddits, comments, submissions, and more!) """
@@ -97,7 +97,7 @@ class PaintReddit(DirectionalDraw, ABC):
         return value, cur_type
 
 
-class PaintSubreddit(PaintReddit):
+class PrintSubreddit(PrintReddit):
     """ An object that is built on top of a praw `Subreddit` instance,
     and can generate and print information about the subreddit to the
     terminal. """
@@ -133,7 +133,7 @@ class PaintSubreddit(PaintReddit):
         return group.generate()
 
 
-class PaintComment(PaintReddit):
+class PrintComment(PrintReddit):
     """ An object that is built on top of a praw `Comment` instance,
     and can generate and print information about the comment to the
     terminal. """
